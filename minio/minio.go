@@ -22,6 +22,8 @@ import (
 	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
+var _ core.Storage = (*Minio)(nil)
+
 // Minio client
 type Minio struct {
 	client *minio.Client

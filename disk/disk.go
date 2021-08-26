@@ -15,6 +15,8 @@ import (
 	"github.com/cheggaaa/pb/v3"
 )
 
+var _ core.Storage = (*Disk)(nil)
+
 // BUFFERSIZE copy file buffer size
 var BUFFERSIZE = 1000
 
