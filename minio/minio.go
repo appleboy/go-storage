@@ -266,7 +266,9 @@ func (m *Minio) GetContent(ctx context.Context, bucketName, fileName string) ([]
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(object)
+	if _, err := buf.ReadFrom(object); err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }
