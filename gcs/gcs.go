@@ -66,7 +66,11 @@ func (g *GCS) UploadFile(ctx context.Context, bucketName, objectName string, con
 }
 
 // UploadFileByReader to cloud
-func (g *GCS) UploadFileByReader(ctx context.Context, bucketName, objectName string, reader io.Reader, contentType string, length int64) error {
+func (g *GCS) UploadFileByReader(
+	ctx context.Context,
+	bucketName, objectName string,
+	reader io.Reader, contentType string,
+	length int64) error {
 	w := g.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
 	w.ContentType = contentType
 	if _, err := io.Copy(w, reader); err != nil {
