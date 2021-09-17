@@ -18,6 +18,8 @@ type SignedURLOptions struct {
 type Storage interface {
 	// CreateBucket for create new folder
 	CreateBucket(context.Context, string, string) error
+	// BucketExists Checks if a bucket exists.
+	BucketExists(ctx context.Context, bucketName string) (found bool, err error)
 	// UploadFile for upload single file
 	UploadFile(context.Context, string, string, []byte, io.Reader) error
 	// UploadFileByReader for upload single file

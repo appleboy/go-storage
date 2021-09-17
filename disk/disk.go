@@ -163,6 +163,14 @@ func (d *Disk) FileExist(_ context.Context, bucketName, fileName string) bool {
 	return err == nil
 }
 
+// BucketExists Checks if a bucket exists.
+func (d *Disk) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
+	src := path.Join(d.Path, bucketName)
+	_, err = os.Stat(src)
+
+	return err == nil, err
+}
+
 // Client get disk client
 func (d *Disk) Client() interface{} {
 	return nil

@@ -291,6 +291,11 @@ func (m *Minio) CopyFile(ctx context.Context, srcBucket, srcPath, destBucket, de
 	return nil
 }
 
+// BucketExists Checks if a bucket exists.
+func (m *Minio) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
+	return m.client.BucketExists(ctx, bucketName)
+}
+
 // FileExist check object exist. bucket + filename
 func (m *Minio) FileExist(ctx context.Context, bucketName, fileName string) bool {
 	_, err := m.client.StatObject(ctx, bucketName, fileName, minio.StatObjectOptions{})

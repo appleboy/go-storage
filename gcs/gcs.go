@@ -298,6 +298,16 @@ func (g *GCS) FileExist(ctx context.Context, bucketName, fileName string) bool {
 	return true
 }
 
+// BucketExists Checks if a bucket exists.
+func (g *GCS) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
+	_, err = g.client.Bucket(bucketName).Attrs(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // Client get disk client
 func (g *GCS) Client() interface{} {
 	return g.client
