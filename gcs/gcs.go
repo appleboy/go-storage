@@ -3,7 +3,7 @@ package gcs
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -105,7 +105,7 @@ func (g *GCS) DownloadFile(ctx context.Context, bucketName, fileName, targetFile
 	if err == nil {
 		// If the destination exists and is a directory.
 		if st.IsDir() {
-			return fmt.Errorf("go-storage: fileName is a directory.")
+			return errors.New("go-storage: fileName is a directory")
 		}
 	}
 
@@ -120,7 +120,7 @@ func (g *GCS) DownloadFile(ctx context.Context, bucketName, fileName, targetFile
 	objectDir, _ := filepath.Split(targetFilePath)
 	if objectDir != "" {
 		// Create any missing top level directories.
-		if err := os.MkdirAll(objectDir, 0700); err != nil {
+		if err := os.MkdirAll(objectDir, 0o700); err != nil {
 			return err
 		}
 	}
@@ -135,7 +135,7 @@ func (g *GCS) DownloadFile(ctx context.Context, bucketName, fileName, targetFile
 	filePartPath := targetFilePath + attrs.Etag + ".part.gcs"
 
 	// If exists, open in append mode. If not create it as a part file.
-	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (g *GCS) DownloadFileByProgress(ctx context.Context, bucketName, objectName
 	if err == nil {
 		// If the destination exists and is a directory.
 		if st.IsDir() {
-			return fmt.Errorf("go-storage: fileName is a directory.")
+			return errors.New("go-storage: fileName is a directory")
 		}
 	}
 
@@ -202,7 +202,7 @@ func (g *GCS) DownloadFileByProgress(ctx context.Context, bucketName, objectName
 	objectDir, _ := filepath.Split(filePath)
 	if objectDir != "" {
 		// Create any missing top level directories.
-		if err := os.MkdirAll(objectDir, 0700); err != nil {
+		if err := os.MkdirAll(objectDir, 0o700); err != nil {
 			return err
 		}
 	}
@@ -217,7 +217,7 @@ func (g *GCS) DownloadFileByProgress(ctx context.Context, bucketName, objectName
 	filePartPath := filePath + attrs.Etag + ".part.gcs"
 
 	// If exists, open in append mode. If not create it as a part file.
-	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
 	}

@@ -17,10 +17,10 @@ import (
 
 var _ core.Storage = (*Disk)(nil)
 
-// BUFFERSIZE copy file buffer size
-var BUFFERSIZE = 1000
+// bufferSize copy file buffer size
+var bufferSize = 1000
 
-func copy(src, dst string, BUFFERSIZE int64) error {
+func copy(src, dst string, bufferSize int64) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func copy(src, dst string, BUFFERSIZE int64) error {
 
 	_, err = os.Stat(dst)
 	if err == nil {
-		return fmt.Errorf("File %s already exists", dst)
+		return fmt.Errorf("file %s already exists", dst)
 	}
 
 	destination, err := os.Create(dst)
@@ -47,7 +47,7 @@ func copy(src, dst string, BUFFERSIZE int64) error {
 	}
 	defer destination.Close()
 
-	buf := make([]byte, BUFFERSIZE)
+	buf := make([]byte, bufferSize)
 	for {
 		n, err := source.Read(buf)
 		if err != nil && err != io.EOF {
@@ -90,7 +90,11 @@ func (d *Disk) UploadFile(_ context.Context, bucketName, fileName string, conten
 }
 
 // UploadFileByReader to upload file to disk
-func (d *Disk) UploadFileByReader(_ context.Context, bucketName, fileName string, reader io.Reader, _ string, _ int64) error {
+func (d *Disk) UploadFileByReader(
+	_ context.Context,
+	bucketName, fileName string,
+	reader io.Reader,
+	_ string, _ int64) error {
 	content, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
@@ -152,7 +156,7 @@ func (d *Disk) GetContent(_ context.Context, bucketName, fileName string) ([]byt
 func (d *Disk) CopyFile(_ context.Context, srcBucketName, srcFile, destBucketName, destFile string) error {
 	src := path.Join(d.Path, srcBucketName, srcFile)
 	dest := path.Join(d.Path, destBucketName, destFile)
-	return copy(src, dest, int64(BUFFERSIZE))
+	return copy(src, dest, int64(bufferSize))
 }
 
 // FileExist check object exist. bucket + filename

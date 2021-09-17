@@ -102,7 +102,12 @@ func (m *Minio) UploadFile(ctx context.Context, bucketName, objectName string, c
 }
 
 // UploadFileByReader to s3 server
-func (m *Minio) UploadFileByReader(ctx context.Context, bucketName, objectName string, reader io.Reader, contentType string, length int64) error {
+func (m *Minio) UploadFileByReader(
+	ctx context.Context,
+	bucketName, objectName string,
+	reader io.Reader,
+	contentType string,
+	length int64) error {
 	opts := minio.PutObjectOptions{
 		ContentType: contentType,
 	}
@@ -154,7 +159,10 @@ func (m *Minio) DownloadFile(ctx context.Context, bucketName, fileName, target s
 }
 
 // DownloadFileByProgress downloads and saves the object as a file in the local filesystem.
-func (m *Minio) DownloadFileByProgress(ctx context.Context, bucketName, objectName, filePath string, bar *pb.ProgressBar) error {
+func (m *Minio) DownloadFileByProgress(
+	ctx context.Context,
+	bucketName, objectName, filePath string,
+	bar *pb.ProgressBar) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -191,7 +199,7 @@ func (m *Minio) DownloadFileByProgress(ctx context.Context, bucketName, objectNa
 	}
 
 	// Gather md5sum.
-	objectStat, err := m.core.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions(opts))
+	objectStat, err := m.core.StatObject(ctx, bucketName, objectName, opts)
 	if err != nil {
 		return err
 	}
@@ -325,7 +333,10 @@ func (m *Minio) Client() interface{} {
 }
 
 // SignedURL support signed URL
-func (m *Minio) SignedURL(ctx context.Context, bucketName, filename string, opts *core.SignedURLOptions) (string, error) {
+func (m *Minio) SignedURL(
+	ctx context.Context,
+	bucketName, filename string,
+	opts *core.SignedURLOptions) (string, error) {
 	// Check if file exists
 	if _, err := m.client.StatObject(ctx, bucketName, filename, minio.StatObjectOptions{}); err != nil {
 		return "", err
