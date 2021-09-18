@@ -28,6 +28,87 @@ type GCS struct {
 	client     *storage.Client
 }
 
+func downloadFile(ctx context.Context, client *storage.Client, bucketName, fileName, filePath string) error {
+	// Verify if destination already exists.
+	st, err := os.Stat(filePath)
+	if err == nil {
+		// If the destination exists and is a directory.
+		if st.IsDir() {
+			return errors.New("go-storage: fileName is a directory")
+		}
+	}
+
+	// Proceed if file does not exist. return for all other errors.
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	// Extract top level directory.
+	objectDir, _ := filepath.Split(filePath)
+	if objectDir != "" {
+		// Create any missing top level directories.
+		if err := os.MkdirAll(objectDir, 0o700); err != nil {
+			return err
+		}
+	}
+
+	obj := client.Bucket(bucketName).Object(fileName)
+	attrs, err := obj.Attrs(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Write to a temporary file "fileName.part.gcs" before saving.
+	filePartPath := filePath + attrs.Etag + ".part.gcs"
+
+	// If exists, open in append mode. If not create it as a part file.
+	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+
+	// If we return early with an error, be sure to close and delete
+	// filePart.  If we have an error along the way there is a chance
+	// that filePart is somehow damaged, and we should discard it.
+	closeAndRemove := true
+	defer func() {
+		if closeAndRemove {
+			_ = filePart.Close()
+			_ = os.Remove(filePartPath)
+		}
+	}()
+
+	// Issue Stat to get the current offset.
+	st, err = filePart.Stat()
+	if err != nil {
+		return err
+	}
+
+	r, err := obj.NewRangeReader(ctx, st.Size(), attrs.Size)
+	if err != nil {
+		return err
+	}
+
+	// Write to the part file.
+	if _, err = io.CopyN(filePart, r, attrs.Size); err != nil {
+		return err
+	}
+
+	// Close the file before rename, this is specifically needed for Windows users.
+	closeAndRemove = false
+	if err = filePart.Close(); err != nil {
+		return err
+	}
+
+	// Safely completed. Now commit by renaming to actual filename.
+	if err = os.Rename(filePartPath, filePath); err != nil {
+		return err
+	}
+	return nil
+}
+
 // NewEngine struct
 func NewEngine(projectID string, googleAccessID string, privateKey []byte) (*GCS, error) {
 	client, err := storage.NewClient(context.Background())
@@ -103,167 +184,18 @@ func (g *GCS) GetFileURL(bucketName, fileName string) string {
 }
 
 // DownloadFile downloads and saves the object as a file in the local filesystem.
-func (g *GCS) DownloadFile(ctx context.Context, bucketName, fileName, targetFilePath string) error {
-	// Verify if destination already exists.
-	st, err := os.Stat(targetFilePath)
-	if err == nil {
-		// If the destination exists and is a directory.
-		if st.IsDir() {
-			return errors.New("go-storage: fileName is a directory")
-		}
-	}
-
-	// Proceed if file does not exist. return for all other errors.
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	}
-
-	// Extract top level directory.
-	objectDir, _ := filepath.Split(targetFilePath)
-	if objectDir != "" {
-		// Create any missing top level directories.
-		if err := os.MkdirAll(objectDir, 0o700); err != nil {
-			return err
-		}
-	}
-
-	obj := g.client.Bucket(bucketName).Object(fileName)
-	attrs, err := obj.Attrs(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Write to a temporary file "fileName.part.gcs" before saving.
-	filePartPath := targetFilePath + attrs.Etag + ".part.gcs"
-
-	// If exists, open in append mode. If not create it as a part file.
-	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-
-	// If we return early with an error, be sure to close and delete
-	// filePart.  If we have an error along the way there is a chance
-	// that filePart is somehow damaged, and we should discard it.
-	closeAndRemove := true
-	defer func() {
-		if closeAndRemove {
-			_ = filePart.Close()
-			_ = os.Remove(filePartPath)
-		}
-	}()
-
-	// Issue Stat to get the current offset.
-	st, err = filePart.Stat()
-	if err != nil {
-		return err
-	}
-
-	r, err := obj.NewRangeReader(ctx, st.Size(), attrs.Size)
-	if err != nil {
-		return err
-	}
-
-	// Write to the part file.
-	if _, err = io.CopyN(filePart, r, attrs.Size); err != nil {
-		return err
-	}
-
-	// Close the file before rename, this is specifically needed for Windows users.
-	closeAndRemove = false
-	if err = filePart.Close(); err != nil {
-		return err
-	}
-
-	// Safely completed. Now commit by renaming to actual filename.
-	if err = os.Rename(filePartPath, targetFilePath); err != nil {
-		return err
-	}
-	return nil
+func (g *GCS) DownloadFile(
+	ctx context.Context,
+	bucketName, objectName, filePath string) error {
+	return downloadFile(ctx, g.client, bucketName, objectName, filePath)
 }
 
 // DownloadFileByProgress downloads and saves the object as a file in the local filesystem.
-func (g *GCS) DownloadFileByProgress(ctx context.Context, bucketName, objectName, filePath string, bar *pb.ProgressBar) error {
-	// Verify if destination already exists.
-	st, err := os.Stat(filePath)
-	if err == nil {
-		// If the destination exists and is a directory.
-		if st.IsDir() {
-			return errors.New("go-storage: fileName is a directory")
-		}
-	}
-
-	// Proceed if file does not exist. return for all other errors.
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	}
-
-	// Extract top level directory.
-	objectDir, _ := filepath.Split(filePath)
-	if objectDir != "" {
-		// Create any missing top level directories.
-		if err := os.MkdirAll(objectDir, 0o700); err != nil {
-			return err
-		}
-	}
-
-	obj := g.client.Bucket(bucketName).Object(objectName)
-	attrs, err := obj.Attrs(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Write to a temporary file "fileName.part.gcs" before saving.
-	filePartPath := filePath + attrs.Etag + ".part.gcs"
-
-	// If exists, open in append mode. If not create it as a part file.
-	filePart, err := os.OpenFile(filePartPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-
-	// If we return early with an error, be sure to close and delete
-	// filePart.  If we have an error along the way there is a chance
-	// that filePart is somehow damaged, and we should discard it.
-	closeAndRemove := true
-	defer func() {
-		if closeAndRemove {
-			_ = filePart.Close()
-			_ = os.Remove(filePartPath)
-		}
-	}()
-
-	// Issue Stat to get the current offset.
-	st, err = filePart.Stat()
-	if err != nil {
-		return err
-	}
-
-	r, err := obj.NewRangeReader(ctx, st.Size(), attrs.Size)
-	if err != nil {
-		return err
-	}
-
-	// Write to the part file.
-	if _, err = io.CopyN(filePart, r, attrs.Size); err != nil {
-		return err
-	}
-
-	// Close the file before rename, this is specifically needed for Windows users.
-	closeAndRemove = false
-	if err = filePart.Close(); err != nil {
-		return err
-	}
-
-	// Safely completed. Now commit by renaming to actual filename.
-	if err = os.Rename(filePartPath, filePath); err != nil {
-		return err
-	}
-	return nil
+func (g *GCS) DownloadFileByProgress(
+	ctx context.Context,
+	bucketName, objectName, filePath string,
+	_ *pb.ProgressBar) error {
+	return downloadFile(ctx, g.client, bucketName, objectName, filePath)
 }
 
 // GetContent for storage bucket + filename
