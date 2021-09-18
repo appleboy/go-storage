@@ -6,5 +6,5 @@ require (
 	cloud.google.com/go/storage v1.16.0
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/h2non/filetype v1.1.1
-	github.com/minio/minio-go/v7 v7.0.13
+	github.com/minio/minio-go/v7 v7.0.14
 )
