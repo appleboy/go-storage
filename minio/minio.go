@@ -46,7 +46,8 @@ func NewEngine(endpoint, accessID, secretKey string, ssl bool, region string) (*
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		/* #nosec */
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !ssl},
 	}
 	// Fetching from IAM roles assigned to an EC2 instance.
 	if accessID == "" && secretKey == "" {
