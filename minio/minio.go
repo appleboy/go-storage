@@ -242,6 +242,7 @@ func (m *Minio) DownloadFileByProgress(
 	if err != nil {
 		return err
 	}
+	defer objectReader.Close()
 
 	// progress bar
 	bar.SetTotal(objectStat.Size)
@@ -273,6 +274,7 @@ func (m *Minio) GetContent(ctx context.Context, bucketName, fileName string) ([]
 	if err != nil {
 		return nil, err
 	}
+	defer object.Close()
 
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(object); err != nil {
