@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/appleboy/go-storage/core"
-	"github.com/h2non/filetype"
 
+	"cloud.google.com/go/storage"
 	"github.com/cheggaaa/pb/v3"
+	"github.com/h2non/filetype"
 )
 
 var _ core.Storage = (*GCS)(nil)
