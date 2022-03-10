@@ -31,7 +31,7 @@ type Minio struct {
 }
 
 // NewEngine struct
-func NewEngine(endpoint, accessID, secretKey string, ssl bool, region string) (*Minio, error) {
+func NewEngine(endpoint, accessID, secretKey string, ssl, insecureSkipVerify bool, region string) (*Minio, error) {
 	var client *minio.Client
 	var core *minio.Core
 	var err error
@@ -47,7 +47,7 @@ func NewEngine(endpoint, accessID, secretKey string, ssl bool, region string) (*
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
 		/* #nosec */
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !ssl},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
 	}
 	// Fetching from IAM roles assigned to an EC2 instance.
 	if accessID == "" && secretKey == "" {
@@ -108,7 +108,8 @@ func (m *Minio) UploadFileByReader(
 	bucketName, objectName string,
 	reader io.Reader,
 	contentType string,
-	length int64) error {
+	length int64,
+) error {
 	opts := minio.PutObjectOptions{
 		ContentType: contentType,
 	}
@@ -163,7 +164,8 @@ func (m *Minio) DownloadFile(ctx context.Context, bucketName, fileName, target s
 func (m *Minio) DownloadFileByProgress(
 	ctx context.Context,
 	bucketName, objectName, filePath string,
-	bar *pb.ProgressBar) error {
+	bar *pb.ProgressBar,
+) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -339,7 +341,8 @@ func (m *Minio) Client() interface{} {
 func (m *Minio) SignedURL(
 	ctx context.Context,
 	bucketName, filename string,
-	opts *core.SignedURLOptions) (string, error) {
+	opts *core.SignedURLOptions,
+) (string, error) {
 	// Check if file exists
 	if _, err := m.client.StatObject(ctx, bucketName, filename, minio.StatObjectOptions{}); err != nil {
 		return "", err

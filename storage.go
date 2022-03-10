@@ -11,15 +11,16 @@ var S3 core.Storage
 
 // Config for storage
 type Config struct {
-	Endpoint  string
-	AccessID  string
-	SecretKey string
-	SSL       bool
-	Region    string
-	Path      string
-	Bucket    string
-	Addr      string
-	Driver    string
+	Endpoint           string
+	AccessID           string
+	SecretKey          string
+	SSL                bool
+	InsecureSkipVerify bool
+	Region             string
+	Path               string
+	Bucket             string
+	Addr               string
+	Driver             string
 }
 
 // NewEngine return storage interface
@@ -32,6 +33,7 @@ func NewEngine(cfg Config) (core.Storage, error) {
 			cfg.AccessID,
 			cfg.SecretKey,
 			cfg.SSL,
+			cfg.InsecureSkipVerify,
 			cfg.Region,
 		)
 		if err != nil {
@@ -48,12 +50,17 @@ func NewEngine(cfg Config) (core.Storage, error) {
 }
 
 // NewS3Engine return storage interface
-func NewS3Engine(endPoint, accessID, secretKey string, ssl bool, region string) (core.Storage, error) {
+func NewS3Engine(
+	endPoint, accessID, secretKey string,
+	ssl, insecureSkipVerify bool,
+	region string,
+) (core.Storage, error) {
 	return minio.NewEngine(
 		endPoint,
 		accessID,
 		secretKey,
 		ssl,
+		insecureSkipVerify,
 		region,
 	)
 }
