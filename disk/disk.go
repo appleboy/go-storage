@@ -95,6 +95,14 @@ func (d *Disk) UploadFileByReader(
 	bucketName, fileName string,
 	reader io.Reader,
 	_ string, _ int64) error {
+
+	// check folder exists
+	// ex: bucket + foo/bar/uuid.tar.gz
+	storage := path.Join(d.Path, bucketName, filepath.Dir(fileName))
+	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
+		return nil
+	}
+
 	content, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
