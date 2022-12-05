@@ -17,31 +17,31 @@ type SignedURLOptions struct {
 // Storage for s3 and disk
 type Storage interface {
 	// CreateBucket for create new folder
-	CreateBucket(context.Context, string, string) error
+	CreateBucket(ctx context.Context, bucketName string, region string) error
 	// BucketExists Checks if a bucket exists.
 	BucketExists(ctx context.Context, bucketName string) (found bool, err error)
 	// UploadFile for upload single file
-	UploadFile(context.Context, string, string, []byte, io.Reader) error
+	UploadFile(ctx context.Context, bucketName string, objectName string, content []byte, reader io.Reader) error
 	// UploadFileByReader for upload single file
-	UploadFileByReader(context.Context, string, string, io.Reader, string, int64) error
+	UploadFileByReader(ctx context.Context, bucketName string, objectName string, reader io.Reader, contentType string, length int64) error
 	// DeleteFile for delete single file
-	DeleteFile(context.Context, string, string) error
+	DeleteFile(ctx context.Context, bucketName string, fileName string) error
 	// FilePath for store path + file name
-	FilePath(string, string) string
+	FilePath(bucketName string, fileName string) string
 	// GetFile for storage host + bucket + filename
-	GetFileURL(string, string) string
+	GetFileURL(bucketName string, fileName string) string
 	// DownloadFile downloads and saves the object as a file in the local filesystem.
-	DownloadFile(context.Context, string, string, string) error
+	DownloadFile(ctx context.Context, bucketName string, objectName string, filePath string) error
 	// DownloadFileByProgress downloads and saves the object as a file in the local filesystem.
-	DownloadFileByProgress(context.Context, string, string, string, *pb.ProgressBar) error
+	DownloadFileByProgress(ctx context.Context, bucketName string, objectName string, filePath string, bar *pb.ProgressBar) error
 	// FileExist check object exist. bucket + filename
-	FileExist(context.Context, string, string) bool
+	FileExist(ctx context.Context, bucketName string, fileName string) bool
 	// GetContent for storage bucket + filename
-	GetContent(context.Context, string, string) ([]byte, error)
+	GetContent(ctx context.Context, bucketName string, fileName string) ([]byte, error)
 	// Copy Create or replace an object through server-side copying of an existing object.
-	CopyFile(context.Context, string, string, string, string) error
+	CopyFile(ctx context.Context, srcBucket string, srcPath string, dstBucket string, dstPath string) error
 	// Client get storage client
 	Client() interface{}
 	// SignedURL get signed URL
-	SignedURL(context.Context, string, string, *SignedURLOptions) (string, error)
+	SignedURL(ctx context.Context, bucketName string, filePath string, opts *SignedURLOptions) (string, error)
 }
