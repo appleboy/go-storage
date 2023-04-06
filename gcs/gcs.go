@@ -151,7 +151,8 @@ func (g *GCS) UploadFileByReader(
 	ctx context.Context,
 	bucketName, objectName string,
 	reader io.Reader, contentType string,
-	length int64) error {
+	length int64,
+) error {
 	w := g.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
 	w.ContentType = contentType
 	if _, err := io.Copy(w, reader); err != nil {
@@ -186,7 +187,8 @@ func (g *GCS) GetFileURL(bucketName, fileName string) string {
 // DownloadFile downloads and saves the object as a file in the local filesystem.
 func (g *GCS) DownloadFile(
 	ctx context.Context,
-	bucketName, objectName, filePath string) error {
+	bucketName, objectName, filePath string,
+) error {
 	return downloadFile(ctx, g.client, bucketName, objectName, filePath)
 }
 
@@ -194,7 +196,8 @@ func (g *GCS) DownloadFile(
 func (g *GCS) DownloadFileByProgress(
 	ctx context.Context,
 	bucketName, objectName, filePath string,
-	_ *pb.ProgressBar) error {
+	_ *pb.ProgressBar,
+) error {
 	return downloadFile(ctx, g.client, bucketName, objectName, filePath)
 }
 

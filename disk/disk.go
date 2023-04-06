@@ -94,8 +94,8 @@ func (d *Disk) UploadFileByReader(
 	_ context.Context,
 	bucketName, fileName string,
 	reader io.Reader,
-	_ string, _ int64) error {
-
+	_ string, _ int64,
+) error {
 	// check folder exists
 	// ex: bucket + foo/bar/uuid.tar.gz
 	storage := path.Join(d.Path, bucketName, filepath.Dir(fileName))
