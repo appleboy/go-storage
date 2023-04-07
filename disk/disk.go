@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -86,7 +85,7 @@ func (d *Disk) UploadFile(_ context.Context, bucketName, fileName string, conten
 	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
 		return nil
 	}
-	return ioutil.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
+	return os.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
 }
 
 // UploadFileByReader to upload file to disk
@@ -103,11 +102,11 @@ func (d *Disk) UploadFileByReader(
 		return nil
 	}
 
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
+	return os.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
 }
 
 // CreateBucket create bucket
@@ -157,7 +156,7 @@ func (d *Disk) DownloadFileByProgress(_ context.Context, bucketName, fileName, t
 
 // GetContent for storage bucket + filename
 func (d *Disk) GetContent(_ context.Context, bucketName, fileName string) ([]byte, error) {
-	return ioutil.ReadFile(path.Join(d.Path, bucketName, fileName))
+	return os.ReadFile(path.Join(d.Path, bucketName, fileName))
 }
 
 // CopyFile copy src to dest

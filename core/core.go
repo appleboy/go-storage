@@ -23,7 +23,14 @@ type Storage interface {
 	// UploadFile for upload single file
 	UploadFile(ctx context.Context, bucketName string, objectName string, content []byte, reader io.Reader) error
 	// UploadFileByReader for upload single file
-	UploadFileByReader(ctx context.Context, bucketName string, objectName string, reader io.Reader, contentType string, length int64) error
+	UploadFileByReader(
+		ctx context.Context,
+		bucketName string,
+		objectName string,
+		reader io.Reader,
+		contentType string,
+		length int64,
+	) error
 	// DeleteFile for delete single file
 	DeleteFile(ctx context.Context, bucketName string, fileName string) error
 	// FilePath for store path + file name
@@ -33,7 +40,13 @@ type Storage interface {
 	// DownloadFile downloads and saves the object as a file in the local filesystem.
 	DownloadFile(ctx context.Context, bucketName string, objectName string, filePath string) error
 	// DownloadFileByProgress downloads and saves the object as a file in the local filesystem.
-	DownloadFileByProgress(ctx context.Context, bucketName string, objectName string, filePath string, bar *pb.ProgressBar) error
+	DownloadFileByProgress(
+		ctx context.Context,
+		bucketName string,
+		objectName string,
+		filePath string,
+		bar *pb.ProgressBar,
+	) error
 	// FileExist check object exist. bucket + filename
 	FileExist(ctx context.Context, bucketName string, fileName string) bool
 	// GetContent for storage bucket + filename
