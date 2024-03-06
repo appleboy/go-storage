@@ -2,8 +2,6 @@ module github.com/appleboy/go-storage
 
 go 1.21
 
-toolchain go1.21.2
-
 require (
 	cloud.google.com/go/storage v1.39.0
 	github.com/cheggaaa/pb/v3 v3.1.5
