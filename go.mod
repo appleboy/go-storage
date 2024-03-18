@@ -3,7 +3,7 @@ module github.com/appleboy/go-storage
 go 1.21
 
 require (
-	cloud.google.com/go/storage v1.39.0
+	cloud.google.com/go/storage v1.39.1
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/h2non/filetype v1.1.3
 	github.com/minio/minio-go/v7 v7.0.66
