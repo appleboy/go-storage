@@ -63,6 +63,6 @@ type Storage interface {
 	Client() interface{}
 	// SignedURL get signed URL
 	SignedURL(ctx context.Context, bucketName string, filePath string, opts *SignedURLOptions) (string, error)
-	// Set lifecycle on bucket or an object prefix.
+	// SetLifeCycle on bucket or an object prefix.
 	SetLifeCycle(ctx context.Context, bucketName string, opts *LifecycleConfig) error
 }
