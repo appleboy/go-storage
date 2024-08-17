@@ -19,6 +19,7 @@ import (
 	"github.com/h2non/filetype"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/lifecycle"
 	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
@@ -359,6 +360,26 @@ func (m *Minio) SignedURL(
 	}
 
 	return url.String(), nil
+}
+
+// SetLifeCycle set lifecycle on bucket or an object prefix.
+func (m *Minio) SetLifeCycle(ctx context.Context, bucketName string, opts *core.LifecycleConfig) error {
+	if opts == nil {
+		return errInvalidArgument("opts cannot be nil")
+	}
+	config := lifecycle.NewConfiguration()
+	config.Rules = []lifecycle.Rule{
+		{
+			ID:     bucketName + "-lifecycle-rule",
+			Status: "Enabled",
+			Expiration: lifecycle.Expiration{
+				Days: lifecycle.ExpirationDays(opts.Days),
+			},
+			Prefix: opts.Prefix,
+		},
+	}
+
+	return m.client.SetBucketLifecycle(ctx, bucketName, config)
 }
 
 // errInvalidArgument - Invalid argument response.

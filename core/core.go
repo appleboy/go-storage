@@ -14,6 +14,12 @@ type SignedURLOptions struct {
 	DefaultFilename string
 }
 
+// LifecycleConfig for set lifecycle
+type LifecycleConfig struct {
+	Days   int
+	Prefix string
+}
+
 // Storage for s3 and disk
 type Storage interface {
 	// CreateBucket for create new folder
@@ -57,4 +63,6 @@ type Storage interface {
 	Client() interface{}
 	// SignedURL get signed URL
 	SignedURL(ctx context.Context, bucketName string, filePath string, opts *SignedURLOptions) (string, error)
+	// Set lifecycle on bucket or an object prefix.
+	SetLifeCycle(ctx context.Context, bucketName string, opts *LifecycleConfig) error
 }

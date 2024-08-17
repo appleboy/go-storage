@@ -269,3 +269,7 @@ func (g *GCS) SignedURL(ctx context.Context, bucketName, fileName string, opts *
 			Expires:        time.Now().UTC().Add(opts.Expiry),
 		})
 }
+
+func (g *GCS) SetLifeCycle(_ context.Context, _ string, _ *core.LifecycleConfig) error {
+	return nil
+}

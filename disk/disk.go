@@ -191,3 +191,7 @@ func (d *Disk) Client() interface{} {
 func (d *Disk) SignedURL(_ context.Context, bucketName, filename string, opts *core.SignedURLOptions) (string, error) {
 	return d.GetFileURL(bucketName, filename), nil
 }
+
+func (d *Disk) SetLifeCycle(_ context.Context, _ string, _ *core.LifecycleConfig) error {
+	return nil
+}
