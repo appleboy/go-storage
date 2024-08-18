@@ -367,17 +367,24 @@ func (m *Minio) SetLifeCycle(ctx context.Context, bucketName string, opts *core.
 	if opts == nil {
 		return errInvalidArgument("opts cannot be nil")
 	}
+	if opts.Days <= 0 {
+		return errInvalidArgument("Days must be greater than 0")
+	}
 	config := lifecycle.NewConfiguration()
-	config.Rules = []lifecycle.Rule{
-		{
-			ID:     bucketName + "-lifecycle-rule",
-			Status: "Enabled",
-			Expiration: lifecycle.Expiration{
-				Days: lifecycle.ExpirationDays(opts.Days),
-			},
-			Prefix: opts.Prefix,
+	rule := lifecycle.Rule{
+		ID:     bucketName + "-lifecycle-rule",
+		Status: "Enabled",
+		Expiration: lifecycle.Expiration{
+			Days: lifecycle.ExpirationDays(opts.Days),
 		},
 	}
+
+	if opts.Prefix != "" {
+		rule.RuleFilter = lifecycle.Filter{
+			Prefix: opts.Prefix,
+		}
+	}
+	config.Rules = []lifecycle.Rule{rule}
 
 	return m.client.SetBucketLifecycle(ctx, bucketName, config)
 }
