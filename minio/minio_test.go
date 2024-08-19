@@ -5,6 +5,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/minio"
 )
 
@@ -21,13 +22,20 @@ func getMinio() (*minio.MinioContainer, error) {
 
 func TestCreateBucket(t *testing.T) {
 	minioContainer, err := getMinio()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
 
 	defer func() {
-		if err := minioContainer.Terminate(context.Background()); err != nil {
-			t.Fatal(err)
-		}
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
 	}()
 }
