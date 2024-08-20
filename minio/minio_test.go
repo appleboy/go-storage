@@ -39,3 +39,36 @@ func TestCreateBucket(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 }
+
+func TestDeleteFile(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// upload a file
+	content := []byte("test content")
+	err = client.UploadFile(context.Background(), "testbucket", "testfile.txt", content, nil)
+	assert.NoError(t, err)
+
+	// delete the file
+	err = client.DeleteFile(context.Background(), "testbucket", "testfile.txt")
+	assert.NoError(t, err)
+
+	// check if the file exists
+	exists := client.FileExist(context.Background(), "testbucket", "testfile.txt")
+	assert.False(t, exists)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
