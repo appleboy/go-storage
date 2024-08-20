@@ -3,6 +3,8 @@ package minio
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,6 +68,44 @@ func TestDeleteFile(t *testing.T) {
 	// check if the file exists
 	exists := client.FileExist(context.Background(), "testbucket", "testfile.txt")
 	assert.False(t, exists)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
+
+func TestDownloadFile(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// upload a file
+	content := []byte("test content")
+	err = client.UploadFile(context.Background(), "testbucket", "testfile.txt", content, nil)
+	assert.NoError(t, err)
+
+	// check if the targetFile exists
+	exists := client.FileExist(context.Background(), "testbucket", "testfile.txt")
+	assert.True(t, exists)
+
+	// download the file
+	tmp := t.TempDir()
+	targetFile := filepath.Join(tmp, "file.txt")
+	err = client.DownloadFile(context.Background(), "testbucket", "testfile.txt", targetFile)
+	assert.NoError(t, err)
+
+	_, err = os.Stat(targetFile)
+	assert.NoError(t, err)
 
 	defer func() {
 		err := minioContainer.Terminate(context.Background())
