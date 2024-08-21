@@ -112,3 +112,33 @@ func TestDownloadFile(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 }
+
+func TestGetContent(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// upload a file
+	content := []byte("test content")
+	err = client.UploadFile(context.Background(), "testbucket", "testfile.txt", content, nil)
+	assert.NoError(t, err)
+
+	// get the content of the file
+	fileContent, err := client.GetContent(context.Background(), "testbucket", "testfile.txt")
+	assert.NoError(t, err)
+	assert.Equal(t, content, fileContent)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
