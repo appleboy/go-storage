@@ -172,3 +172,40 @@ func TestBucketExists(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 }
+
+func TestCopyFile(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create source bucket
+	err = client.CreateBucket(context.Background(), "sourcebucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// create destination bucket
+	err = client.CreateBucket(context.Background(), "destinationbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// upload a file to the source bucket
+	content := []byte("test content")
+	err = client.UploadFile(context.Background(), "sourcebucket", "testfile.txt", content, nil)
+	assert.NoError(t, err)
+
+	// copy the file from source bucket to destination bucket
+	err = client.CopyFile(context.Background(), "sourcebucket", "testfile.txt", "destinationbucket", "testfile.txt")
+	assert.NoError(t, err)
+
+	// check if the file exists in the destination bucket
+	exists := client.FileExist(context.Background(), "destinationbucket", "testfile.txt")
+	assert.True(t, exists)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
