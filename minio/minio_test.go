@@ -142,3 +142,33 @@ func TestGetContent(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 }
+
+func TestBucketExists(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// check if the bucket exists
+	exists, err := client.BucketExists(context.Background(), "testbucket")
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	// check if a non-existent bucket exists
+	exists, err = client.BucketExists(context.Background(), "nonexistentbucket")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
