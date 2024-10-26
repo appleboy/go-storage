@@ -111,9 +111,20 @@ func (m *Minio) UploadFileByReader(
 	contentType string,
 	length int64,
 ) error {
+	if contentType == "" {
+		buffer := make([]byte, 512)
+		n, err := reader.Read(buffer)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		contentType = http.DetectContentType(buffer[:n])
+		reader = io.MultiReader(bytes.NewReader(buffer[:n]), reader)
+	}
+
 	opts := minio.PutObjectOptions{
 		ContentType: contentType,
 	}
+
 	// Upload the zip file with FPutObject
 	_, err := m.client.PutObject(
 		ctx,

@@ -1,6 +1,7 @@
 package minio
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"os"
@@ -203,6 +204,43 @@ func TestCopyFile(t *testing.T) {
 	// check if the file exists in the destination bucket
 	exists := client.FileExist(context.Background(), "destinationbucket", "testfile.txt")
 	assert.True(t, exists)
+
+	defer func() {
+		err := minioContainer.Terminate(context.Background())
+		assert.NoError(t, err)
+	}()
+}
+
+func TestUploadFileByReader(t *testing.T) {
+	minioContainer, err := getMinio()
+	assert.NoError(t, err)
+
+	conStr, err := minioContainer.ConnectionString(context.Background())
+	assert.NoError(t, err)
+
+	client, err := NewEngine(conStr, "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	// create a bucket
+	err = client.CreateBucket(context.Background(), "testbucket", "us-east-1")
+	assert.NoError(t, err)
+
+	// upload a file using reader
+	content := []byte("test content")
+	reader := bytes.NewReader(content)
+	err = client.UploadFileByReader(
+		context.Background(), "testbucket", "testfile.txt",
+		reader, "text/plain", int64(len(content)))
+	assert.NoError(t, err)
+
+	// check if the file exists
+	exists := client.FileExist(context.Background(), "testbucket", "testfile.txt")
+	assert.True(t, exists)
+
+	// get the content of the file
+	fileContent, err := client.GetContent(context.Background(), "testbucket", "testfile.txt")
+	assert.NoError(t, err)
+	assert.Equal(t, content, fileContent)
 
 	defer func() {
 		err := minioContainer.Terminate(context.Background())
