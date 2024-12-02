@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/storage v1.46.0
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/h2non/filetype v1.1.3
-	github.com/minio/minio-go/v7 v7.0.80
+	github.com/minio/minio-go/v7 v7.0.81
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go/modules/minio v0.33.0
 )
