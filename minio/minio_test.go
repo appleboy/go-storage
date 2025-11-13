@@ -198,7 +198,13 @@ func TestCopyFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// copy the file from source bucket to destination bucket
-	err = client.CopyFile(context.Background(), "sourcebucket", "testfile.txt", "destinationbucket", "testfile.txt")
+	err = client.CopyFile(
+		context.Background(),
+		"sourcebucket",
+		"testfile.txt",
+		"destinationbucket",
+		"testfile.txt",
+	)
 	assert.NoError(t, err)
 
 	// check if the file exists in the destination bucket

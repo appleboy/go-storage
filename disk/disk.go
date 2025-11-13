@@ -78,7 +78,12 @@ func NewEngine(host, path string) *Disk {
 }
 
 // UploadFile to upload file to disk
-func (d *Disk) UploadFile(_ context.Context, bucketName, fileName string, content []byte, _ io.Reader) error {
+func (d *Disk) UploadFile(
+	_ context.Context,
+	bucketName, fileName string,
+	content []byte,
+	_ io.Reader,
+) error {
 	// check folder exists
 	// ex: bucket + foo/bar/uuid.tar.gz
 	storage := path.Join(d.Path, bucketName, filepath.Dir(fileName))
@@ -150,7 +155,11 @@ func (d *Disk) DownloadFile(_ context.Context, bucketName, fileName, target stri
 }
 
 // DownloadFileByProgress downloads and saves the object as a file in the local filesystem.
-func (d *Disk) DownloadFileByProgress(_ context.Context, bucketName, fileName, target string, _ *pb.ProgressBar) error {
+func (d *Disk) DownloadFileByProgress(
+	_ context.Context,
+	bucketName, fileName, target string,
+	_ *pb.ProgressBar,
+) error {
 	return nil
 }
 
@@ -160,7 +169,10 @@ func (d *Disk) GetContent(_ context.Context, bucketName, fileName string) ([]byt
 }
 
 // CopyFile copy src to dest
-func (d *Disk) CopyFile(_ context.Context, srcBucketName, srcFile, destBucketName, destFile string) error {
+func (d *Disk) CopyFile(
+	_ context.Context,
+	srcBucketName, srcFile, destBucketName, destFile string,
+) error {
 	src := path.Join(d.Path, srcBucketName, srcFile)
 	dest := path.Join(d.Path, destBucketName, destFile)
 	return copy(src, dest, int64(bufferSize))
@@ -188,7 +200,11 @@ func (d *Disk) Client() interface{} {
 }
 
 // SignedURL support signed URL
-func (d *Disk) SignedURL(_ context.Context, bucketName, filename string, opts *core.SignedURLOptions) (string, error) {
+func (d *Disk) SignedURL(
+	_ context.Context,
+	bucketName, filename string,
+	opts *core.SignedURLOptions,
+) (string, error) {
 	return d.GetFileURL(bucketName, filename), nil
 }
 

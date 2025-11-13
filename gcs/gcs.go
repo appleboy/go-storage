@@ -28,7 +28,11 @@ type GCS struct {
 	client     *storage.Client
 }
 
-func downloadFile(ctx context.Context, client *storage.Client, bucketName, fileName, filePath string) error {
+func downloadFile(
+	ctx context.Context,
+	client *storage.Client,
+	bucketName, fileName, filePath string,
+) error {
 	// Verify if destination already exists.
 	st, err := os.Stat(filePath)
 	if err == nil {
@@ -110,7 +114,7 @@ func downloadFile(ctx context.Context, client *storage.Client, bucketName, fileN
 }
 
 // NewEngine struct
-func NewEngine(projectID string, googleAccessID string, privateKey []byte) (*GCS, error) {
+func NewEngine(projectID, googleAccessID string, privateKey []byte) (*GCS, error) {
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
 		return nil, err
@@ -125,7 +129,12 @@ func NewEngine(projectID string, googleAccessID string, privateKey []byte) (*GCS
 }
 
 // UploadFile to cloud storage
-func (g *GCS) UploadFile(ctx context.Context, bucketName, objectName string, content []byte, reader io.Reader) error {
+func (g *GCS) UploadFile(
+	ctx context.Context,
+	bucketName, objectName string,
+	content []byte,
+	reader io.Reader,
+) error {
 	contentType := ""
 	kind, _ := filetype.Match(content)
 	if kind != filetype.Unknown {
@@ -253,7 +262,11 @@ func (g *GCS) Client() interface{} {
 }
 
 // SignedURL support signed URL
-func (g *GCS) SignedURL(ctx context.Context, bucketName, fileName string, opts *core.SignedURLOptions) (string, error) {
+func (g *GCS) SignedURL(
+	ctx context.Context,
+	bucketName, fileName string,
+	opts *core.SignedURLOptions,
+) (string, error) {
 	// Check if file exists
 	if _, err := g.client.Bucket(bucketName).Object(fileName).Attrs(ctx); err != nil {
 		return "", err

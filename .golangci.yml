@@ -7,7 +7,6 @@ linters:
     - dupl
     - errcheck
     - exhaustive
-    - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
@@ -15,7 +14,6 @@ linters:
     - gosec
     - govet
     - ineffassign
-    - lll
     - misspell
     - nakedret
     - noctx
@@ -42,9 +40,19 @@ formatters:
     - gofmt
     - gofumpt
     - goimports
+    - golines
   exclusions:
     generated: lax
     paths:
       - third_party$
       - builtin$
       - examples$
+
+  settings:
+    gofumpt:
+      # Module path which contains the source code being formatted.
+      # Default: ""
+      module-path: github/appleboy/go-storage
+      # Choose whether to use the extra rules.
+      # Default: false
+      extra-rules: true

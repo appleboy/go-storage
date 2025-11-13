@@ -32,7 +32,11 @@ type Minio struct {
 }
 
 // NewEngine struct
-func NewEngine(endpoint, accessID, secretKey string, ssl, insecureSkipVerify bool, region string) (*Minio, error) {
+func NewEngine(
+	endpoint, accessID, secretKey string,
+	ssl, insecureSkipVerify bool,
+	region string,
+) (*Minio, error) {
 	var client *minio.Client
 	var core *minio.Core
 	var err error
@@ -72,7 +76,12 @@ func NewEngine(endpoint, accessID, secretKey string, ssl, insecureSkipVerify boo
 }
 
 // UploadFile to s3 server
-func (m *Minio) UploadFile(ctx context.Context, bucketName, objectName string, content []byte, reader io.Reader) error {
+func (m *Minio) UploadFile(
+	ctx context.Context,
+	bucketName, objectName string,
+	content []byte,
+	reader io.Reader,
+) error {
 	contentType := ""
 	kind, _ := filetype.Match(content)
 	if kind != filetype.Unknown {
@@ -299,7 +308,10 @@ func (m *Minio) GetContent(ctx context.Context, bucketName, fileName string) ([]
 }
 
 // CopyFile copy src to dest
-func (m *Minio) CopyFile(ctx context.Context, srcBucket, srcPath, destBucket, destPath string) error {
+func (m *Minio) CopyFile(
+	ctx context.Context,
+	srcBucket, srcPath, destBucket, destPath string,
+) error {
 	src := minio.CopySrcOptions{
 		Bucket: srcBucket,
 		Object: srcPath,
@@ -362,7 +374,10 @@ func (m *Minio) SignedURL(
 
 	reqParams := make(url.Values)
 	if opts != nil && opts.DefaultFilename != "" {
-		reqParams.Set("response-content-disposition", `attachment; filename="`+opts.DefaultFilename+`"`)
+		reqParams.Set(
+			"response-content-disposition",
+			`attachment; filename="`+opts.DefaultFilename+`"`,
+		)
 	}
 
 	url, err := m.client.PresignedGetObject(ctx, bucketName, filename, opts.Expiry, reqParams)
@@ -374,7 +389,11 @@ func (m *Minio) SignedURL(
 }
 
 // SetLifeCycle set lifecycle on bucket or an object prefix.
-func (m *Minio) SetLifeCycle(ctx context.Context, bucketName string, opts *core.LifecycleConfig) error {
+func (m *Minio) SetLifeCycle(
+	ctx context.Context,
+	bucketName string,
+	opts *core.LifecycleConfig,
+) error {
 	if opts == nil {
 		return errInvalidArgument("opts cannot be nil")
 	}
