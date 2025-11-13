@@ -1,6 +1,6 @@
 module github.com/appleboy/go-storage
 
-go 1.24.0
+go 1.24.9
 
 require (
 	cloud.google.com/go/storage v1.46.0
