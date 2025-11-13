@@ -1,6 +1,6 @@
 module github.com/appleboy/go-storage
 
-go 1.23.0
+go 1.24.0
 
 require (
 	cloud.google.com/go/storage v1.46.0
@@ -100,7 +100,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/oauth2 v0.33.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
