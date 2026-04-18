@@ -238,7 +238,9 @@ func (g *GCS) CopyFile(ctx context.Context, srcBucket, srcPath, destBucket, dest
 // FileExist check object exist. bucket + filename
 func (g *GCS) FileExist(ctx context.Context, bucketName, fileName string) bool {
 	// Check if file exists
-	if _, err := g.client.Bucket(bucketName).Object(fileName).Attrs(ctx); err == storage.ErrObjectNotExist {
+	if _, err := g.client.Bucket(bucketName).
+		Object(fileName).
+		Attrs(ctx); err == storage.ErrObjectNotExist {
 		return false
 	} else if err != nil {
 		return false

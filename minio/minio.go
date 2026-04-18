@@ -368,7 +368,12 @@ func (m *Minio) SignedURL(
 	opts *core.SignedURLOptions,
 ) (string, error) {
 	// Check if file exists
-	if _, err := m.client.StatObject(ctx, bucketName, filename, minio.StatObjectOptions{}); err != nil {
+	if _, err := m.client.StatObject(
+		ctx,
+		bucketName,
+		filename,
+		minio.StatObjectOptions{},
+	); err != nil {
 		return "", err
 	}
 
