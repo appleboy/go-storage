@@ -31,6 +31,14 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - dupl
+          - goconst
+          - gocyclo
+          - unparam
     paths:
       - third_party$
       - builtin$
@@ -52,7 +60,7 @@ formatters:
     gofumpt:
       # Module path which contains the source code being formatted.
       # Default: ""
-      module-path: github/appleboy/go-storage
+      module-path: github.com/appleboy/go-storage
       # Choose whether to use the extra rules.
       # Default: false
       extra-rules: true
