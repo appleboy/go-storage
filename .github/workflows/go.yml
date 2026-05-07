@@ -10,19 +10,22 @@ on:
 
 jobs:
   lint:
+    strategy:
+      matrix:
+        go: [1.25, 1.26]
     runs-on: ubuntu-latest
+    name: lint @ Go ${{ matrix.go }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Setup go
         uses: actions/setup-go@v6
         with:
-          go-version-file: "go.mod"
-          check-latest: true
+          go-version: ${{ matrix.go }}
       - name: Setup golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11
+          version: v2.12
           args: --verbose --timeout=30m
   test:
     strategy:
