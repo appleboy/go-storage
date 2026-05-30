@@ -90,31 +90,11 @@ func (d *Disk) UploadFileByReader(
 		return nil
 	}
 
-	// Stream into a temporary file and rename it into place only after a
-	// successful copy, so an upload failure cannot truncate or corrupt an
-	// existing object.
-	tmp, err := os.CreateTemp(storage, filepath.Base(fileName)+".*.part")
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
-	tmpName := tmp.Name()
-	defer func() {
-		_ = tmp.Close()
-		_ = os.Remove(tmpName) // no-op once renamed into place
-	}()
-
-	if _, err := io.Copy(tmp, reader); err != nil {
-		return err
-	}
-	// Close reports delayed write errors (e.g. flush failures) that io.Copy
-	// alone would miss, so surface them before committing the rename.
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmpName, os.FileMode(0o644)); err != nil {
-		return err
-	}
-	return os.Rename(tmpName, d.FilePath(bucketName, fileName))
+	return os.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
 }
 
 // CreateBucket create bucket
