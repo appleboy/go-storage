@@ -16,7 +16,6 @@ import (
 	"github.com/appleboy/go-storage/core"
 
 	"github.com/cheggaaa/pb/v3"
-	"github.com/h2non/filetype"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio-go/v7/pkg/lifecycle"
@@ -37,9 +36,6 @@ func NewEngine(
 	ssl, insecureSkipVerify bool,
 	region string,
 ) (*Minio, error) {
-	var client *minio.Client
-	var core *minio.Core
-	var err error
 	if endpoint == "" {
 		return nil, errors.New("endpoint can't be empty")
 	}
@@ -59,18 +55,15 @@ func NewEngine(
 		opts.Creds = credentials.NewIAM("")
 	}
 
-	client, err = minio.New(endpoint, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	core, err = minio.NewCore(endpoint, opts)
+	// Core embeds *minio.Client, so a single NewCore call provides both the
+	// high-level client and the lower-level core primitives.
+	core, err := minio.NewCore(endpoint, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Minio{
-		client: client,
+		client: core.Client,
 		core:   core,
 	}, nil
 }
@@ -82,18 +75,8 @@ func (m *Minio) UploadFile(
 	content []byte,
 	reader io.Reader,
 ) error {
-	contentType := ""
-	kind, _ := filetype.Match(content)
-	if kind != filetype.Unknown {
-		contentType = kind.MIME.Value
-	}
-
-	if contentType == "" {
-		contentType = http.DetectContentType(content)
-	}
-
 	opts := minio.PutObjectOptions{
-		ContentType: contentType,
+		ContentType: core.DetectContentType(content),
 	}
 	if reader != nil {
 		opts.Progress = reader
@@ -283,12 +266,7 @@ func (m *Minio) DownloadFileByProgress(
 	}
 
 	// Safely completed. Now commit by renaming to actual filename.
-	if err = os.Rename(filePartPath, filePath); err != nil {
-		return err
-	}
-
-	// Return.
-	return nil
+	return os.Rename(filePartPath, filePath)
 }
 
 // GetContent for storage bucket + filename
@@ -299,12 +277,7 @@ func (m *Minio) GetContent(ctx context.Context, bucketName, fileName string) ([]
 	}
 	defer object.Close()
 
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(object); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return io.ReadAll(object)
 }
 
 // CopyFile copy src to dest
@@ -322,10 +295,8 @@ func (m *Minio) CopyFile(
 		Object: destPath,
 	}
 	// Copy object call
-	if _, err := m.client.CopyObject(ctx, dst, src); err != nil {
-		return err
-	}
-	return nil
+	_, err := m.client.CopyObject(ctx, dst, src)
+	return err
 }
 
 // BucketExists Checks if a bucket exists.
@@ -336,24 +307,7 @@ func (m *Minio) BucketExists(ctx context.Context, bucketName string) (found bool
 // FileExist check object exist. bucket + filename
 func (m *Minio) FileExist(ctx context.Context, bucketName, fileName string) bool {
 	_, err := m.client.StatObject(ctx, bucketName, fileName, minio.StatObjectOptions{})
-	if err != nil {
-		errResponse := minio.ToErrorResponse(err)
-		if errResponse.Code == "AccessDenied" {
-			return false
-		}
-		if errResponse.Code == "NoSuchBucket" {
-			return false
-		}
-		if errResponse.Code == "InvalidBucketName" {
-			return false
-		}
-		if errResponse.Code == "NoSuchKey" {
-			return false
-		}
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // Client get disk client
@@ -377,8 +331,9 @@ func (m *Minio) SignedURL(
 		return "", err
 	}
 
-	reqParams := make(url.Values)
+	var reqParams url.Values
 	if opts != nil && opts.DefaultFilename != "" {
+		reqParams = make(url.Values)
 		reqParams.Set(
 			"response-content-disposition",
 			`attachment; filename="`+opts.DefaultFilename+`"`,

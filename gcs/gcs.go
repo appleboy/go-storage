@@ -1,11 +1,9 @@
 package gcs
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,7 +13,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/cheggaaa/pb/v3"
-	"github.com/h2non/filetype"
 )
 
 var _ core.Storage = (*GCS)(nil)
@@ -135,17 +132,8 @@ func (g *GCS) UploadFile(
 	content []byte,
 	reader io.Reader,
 ) error {
-	contentType := ""
-	kind, _ := filetype.Match(content)
-	if kind != filetype.Unknown {
-		contentType = kind.MIME.Value
-	}
-
-	if contentType == "" {
-		contentType = http.DetectContentType(content)
-	}
 	w := g.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
-	w.ContentType = contentType
+	w.ContentType = core.DetectContentType(content)
 	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
@@ -212,50 +200,34 @@ func (g *GCS) DownloadFileByProgress(
 
 // GetContent for storage bucket + filename
 func (g *GCS) GetContent(ctx context.Context, bucketName, fileName string) ([]byte, error) {
-	buf := new(bytes.Buffer)
 	r, err := g.client.Bucket(bucketName).Object(fileName).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	if _, err := buf.ReadFrom(r); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return io.ReadAll(r)
 }
 
 // CopyFile copy src to dest
 func (g *GCS) CopyFile(ctx context.Context, srcBucket, srcPath, destBucket, destPath string) error {
 	src := g.client.Bucket(srcBucket).Object(srcPath)
 	dst := g.client.Bucket(destBucket).Object(destPath)
-	if _, err := dst.CopierFrom(src).Run(ctx); err != nil {
-		return err
-	}
-	return nil
+	_, err := dst.CopierFrom(src).Run(ctx)
+	return err
 }
 
 // FileExist check object exist. bucket + filename
 func (g *GCS) FileExist(ctx context.Context, bucketName, fileName string) bool {
 	// Check if file exists
-	if _, err := g.client.Bucket(bucketName).
-		Object(fileName).
-		Attrs(ctx); err == storage.ErrObjectNotExist {
-		return false
-	} else if err != nil {
-		return false
-	}
-	return true
+	_, err := g.client.Bucket(bucketName).Object(fileName).Attrs(ctx)
+	return err == nil
 }
 
 // BucketExists Checks if a bucket exists.
 func (g *GCS) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
 	_, err = g.client.Bucket(bucketName).Attrs(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return err == nil, err
 }
 
 // Client get disk client
