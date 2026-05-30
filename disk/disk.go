@@ -98,10 +98,14 @@ func (d *Disk) UploadFileByReader(
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	_, err = io.Copy(f, reader)
-	return err
+	if _, err := io.Copy(f, reader); err != nil {
+		_ = f.Close()
+		return err
+	}
+	// Close reports delayed write errors (e.g. flush failures) that io.Copy
+	// alone would miss, so surface them instead of swallowing in a defer.
+	return f.Close()
 }
 
 // CreateBucket create bucket
