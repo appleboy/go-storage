@@ -3,10 +3,21 @@ package core
 import (
 	"context"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
+	"github.com/h2non/filetype"
 )
+
+// DetectContentType guesses the MIME type of content, falling back to
+// http.DetectContentType when the file signature is unknown.
+func DetectContentType(content []byte) string {
+	if kind, _ := filetype.Match(content); kind != filetype.Unknown {
+		return kind.MIME.Value
+	}
+	return http.DetectContentType(content)
+}
 
 // SignedURLOptions download options
 type SignedURLOptions struct {
