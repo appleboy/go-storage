@@ -16,7 +16,7 @@ import (
 
 var _ core.Storage = (*Disk)(nil)
 
-func copy(src, dst string) error {
+func copyFile(src, dst string) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -40,10 +40,16 @@ func copy(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer destination.Close()
 
-	_, err = io.Copy(destination, source)
-	return err
+	if _, err := io.Copy(destination, source); err != nil {
+		// Discard the half-written destination so a retry is not blocked
+		// by the "already exists" guard above and readers never see a
+		// truncated file.
+		_ = destination.Close()
+		_ = os.Remove(dst)
+		return err
+	}
+	return destination.Close()
 }
 
 // Disk client
@@ -71,7 +77,7 @@ func (d *Disk) UploadFile(
 	// ex: bucket + foo/bar/uuid.tar.gz
 	storage := path.Join(d.Path, bucketName, filepath.Dir(fileName))
 	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
-		return nil
+		return err
 	}
 	return os.WriteFile(d.FilePath(bucketName, fileName), content, os.FileMode(0o644))
 }
@@ -87,7 +93,7 @@ func (d *Disk) UploadFileByReader(
 	// ex: bucket + foo/bar/uuid.tar.gz
 	storage := path.Join(d.Path, bucketName, filepath.Dir(fileName))
 	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
-		return nil
+		return err
 	}
 
 	content, err := io.ReadAll(reader)
@@ -101,7 +107,7 @@ func (d *Disk) UploadFileByReader(
 func (d *Disk) CreateBucket(_ context.Context, bucketName, region string) error {
 	storage := path.Join(d.Path, bucketName)
 	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
@@ -148,7 +154,7 @@ func (d *Disk) DownloadFileByProgress(
 
 // GetContent for storage bucket + filename
 func (d *Disk) GetContent(_ context.Context, bucketName, fileName string) ([]byte, error) {
-	return os.ReadFile(path.Join(d.Path, bucketName, fileName))
+	return os.ReadFile(d.FilePath(bucketName, fileName))
 }
 
 // CopyFile copy src to dest
@@ -156,25 +162,30 @@ func (d *Disk) CopyFile(
 	_ context.Context,
 	srcBucketName, srcFile, destBucketName, destFile string,
 ) error {
-	src := path.Join(d.Path, srcBucketName, srcFile)
-	dest := path.Join(d.Path, destBucketName, destFile)
-	return copy(src, dest)
+	src := d.FilePath(srcBucketName, srcFile)
+	dest := d.FilePath(destBucketName, destFile)
+	return copyFile(src, dest)
 }
 
 // FileExist check object exist. bucket + filename
 func (d *Disk) FileExist(_ context.Context, bucketName, fileName string) bool {
-	src := path.Join(d.Path, bucketName, fileName)
-	_, err := os.Stat(src)
+	_, err := os.Stat(d.FilePath(bucketName, fileName))
 
 	return err == nil
 }
 
 // BucketExists Checks if a bucket exists.
-func (d *Disk) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
-	src := path.Join(d.Path, bucketName)
-	_, err = os.Stat(src)
+func (d *Disk) BucketExists(_ context.Context, bucketName string) (found bool, err error) {
+	if _, err := os.Stat(d.FilePath(bucketName, "")); err != nil {
+		// A missing bucket directory is the normal "does not exist" case,
+		// not a failure; only surface real stat errors.
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
 
-	return err == nil, err
+	return true, nil
 }
 
 // Client get disk client

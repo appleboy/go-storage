@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/appleboy/go-storage/core"
 	"github.com/appleboy/go-storage/disk"
 	"github.com/appleboy/go-storage/minio"
@@ -25,10 +27,9 @@ type Config struct {
 
 // NewEngine return storage interface
 func NewEngine(cfg Config) (core.Storage, error) {
-	var err error
 	switch cfg.Driver {
 	case "s3":
-		S3, err = minio.NewEngine(
+		engine, err := minio.NewEngine(
 			cfg.Endpoint,
 			cfg.AccessID,
 			cfg.SecretKey,
@@ -39,14 +40,18 @@ func NewEngine(cfg Config) (core.Storage, error) {
 		if err != nil {
 			return nil, err
 		}
+		S3 = engine
+		return engine, nil
 	case "disk":
-		S3 = disk.NewEngine(
+		engine := disk.NewEngine(
 			cfg.Addr,
 			cfg.Path,
 		)
+		S3 = engine
+		return engine, nil
+	default:
+		return nil, fmt.Errorf("unknown storage driver: %q", cfg.Driver)
 	}
-
-	return S3, nil
 }
 
 // NewS3Engine return storage interface
@@ -55,7 +60,7 @@ func NewS3Engine(
 	ssl, insecureSkipVerify bool,
 	region string,
 ) (core.Storage, error) {
-	return minio.NewEngine(
+	engine, err := minio.NewEngine(
 		endPoint,
 		accessID,
 		secretKey,
@@ -63,6 +68,10 @@ func NewS3Engine(
 		insecureSkipVerify,
 		region,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return engine, nil
 }
 
 // NewDiskEngine return storage interface

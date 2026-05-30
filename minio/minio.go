@@ -105,11 +105,15 @@ func (m *Minio) UploadFileByReader(
 ) error {
 	if contentType == "" {
 		buffer := make([]byte, 512)
-		n, err := reader.Read(buffer)
-		if err != nil && err != io.EOF {
+		// Read up to a full 512-byte sniff window; a single Read may return
+		// fewer bytes than available, which would misdetect the type.
+		n, err := io.ReadFull(reader, buffer)
+		// io.ReadFull returns io.EOF for an empty reader and ErrUnexpectedEOF
+		// for a short one; both are fine here, anything else is a real error.
+		if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 			return err
 		}
-		contentType = http.DetectContentType(buffer[:n])
+		contentType = core.DetectContentType(buffer[:n])
 		reader = io.MultiReader(bytes.NewReader(buffer[:n]), reader)
 	}
 
@@ -321,6 +325,10 @@ func (m *Minio) SignedURL(
 	bucketName, filename string,
 	opts *core.SignedURLOptions,
 ) (string, error) {
+	if opts == nil {
+		return "", errInvalidArgument("opts cannot be nil")
+	}
+
 	// Check if file exists
 	if _, err := m.client.StatObject(
 		ctx,
@@ -332,7 +340,7 @@ func (m *Minio) SignedURL(
 	}
 
 	var reqParams url.Values
-	if opts != nil && opts.DefaultFilename != "" {
+	if opts.DefaultFilename != "" {
 		reqParams = make(url.Values)
 		reqParams.Set(
 			"response-content-disposition",
