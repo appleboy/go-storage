@@ -1,6 +1,7 @@
 package gcs
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -87,14 +88,21 @@ func downloadFile(
 		return err
 	}
 
-	r, err := obj.NewRangeReader(ctx, st.Size(), attrs.Size)
-	if err != nil {
-		return err
-	}
+	// Only fetch the bytes still missing from the part file; passing the full
+	// object size as the length over-reads past the offset on a resumed
+	// download and makes io.CopyN fail with ErrUnexpectedEOF. When the part
+	// file is already complete (remaining <= 0) skip the read and commit it.
+	if remaining := attrs.Size - st.Size(); remaining > 0 {
+		r, err := obj.NewRangeReader(ctx, st.Size(), remaining)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
 
-	// Write to the part file.
-	if _, err = io.CopyN(filePart, r, attrs.Size); err != nil {
-		return err
+		// Write to the part file.
+		if _, err = io.CopyN(filePart, r, remaining); err != nil {
+			return err
+		}
 	}
 
 	// Close the file before rename, this is specifically needed for Windows users.
@@ -104,10 +112,7 @@ func downloadFile(
 	}
 
 	// Safely completed. Now commit by renaming to actual filename.
-	if err = os.Rename(filePartPath, filePath); err != nil {
-		return err
-	}
-	return nil
+	return os.Rename(filePartPath, filePath)
 }
 
 // NewEngine struct
@@ -134,13 +139,16 @@ func (g *GCS) UploadFile(
 ) error {
 	w := g.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
 	w.ContentType = core.DetectContentType(content)
+	// Fall back to the in-memory content when no reader is supplied, matching
+	// the disk and minio drivers and avoiding a nil-reader panic in io.Copy.
+	if reader == nil {
+		reader = bytes.NewReader(content)
+	}
 	if _, err := io.Copy(w, reader); err != nil {
+		_ = w.Close()
 		return err
 	}
-	if err := w.Close(); err != nil {
-		return err
-	}
-	return nil
+	return w.Close()
 }
 
 // UploadFileByReader to cloud
@@ -153,12 +161,10 @@ func (g *GCS) UploadFileByReader(
 	w := g.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
 	w.ContentType = contentType
 	if _, err := io.Copy(w, reader); err != nil {
+		_ = w.Close()
 		return err
 	}
-	if err := w.Close(); err != nil {
-		return err
-	}
-	return nil
+	return w.Close()
 }
 
 // CreateBucket create bucket
@@ -168,7 +174,7 @@ func (g *GCS) CreateBucket(ctx context.Context, bucketName, region string) error
 
 // FilePath for store path + file name
 func (g *GCS) FilePath(bucketName, fileName string) string {
-	return path.Join("https://storage.googleapis.com", bucketName, fileName)
+	return g.GetFileURL(bucketName, fileName)
 }
 
 // DeleteFile delete file
@@ -178,7 +184,9 @@ func (g *GCS) DeleteFile(ctx context.Context, bucketName, fileName string) error
 
 // GetFileURL for storage host + bucket + filename
 func (g *GCS) GetFileURL(bucketName, fileName string) string {
-	return path.Join("https://storage.googleapis.com", bucketName, fileName)
+	// path.Join must not see the scheme, or it collapses "https://" into
+	// "https:/"; only join the bucket/object portion of the path.
+	return "https://storage.googleapis.com/" + path.Join(bucketName, fileName)
 }
 
 // DownloadFile downloads and saves the object as a file in the local filesystem.
@@ -227,6 +235,10 @@ func (g *GCS) FileExist(ctx context.Context, bucketName, fileName string) bool {
 // BucketExists Checks if a bucket exists.
 func (g *GCS) BucketExists(ctx context.Context, bucketName string) (found bool, err error) {
 	_, err = g.client.Bucket(bucketName).Attrs(ctx)
+	// A missing bucket is the normal "does not exist" case, not a failure.
+	if errors.Is(err, storage.ErrBucketNotExist) {
+		return false, nil
+	}
 	return err == nil, err
 }
 
@@ -241,6 +253,10 @@ func (g *GCS) SignedURL(
 	bucketName, fileName string,
 	opts *core.SignedURLOptions,
 ) (string, error) {
+	if opts == nil {
+		return "", errors.New("go-storage: opts cannot be nil")
+	}
+
 	// Check if file exists
 	if _, err := g.client.Bucket(bucketName).Object(fileName).Attrs(ctx); err != nil {
 		return "", err

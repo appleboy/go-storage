@@ -35,7 +35,8 @@ type LifecycleConfig struct {
 type Storage interface {
 	// CreateBucket for create new folder
 	CreateBucket(ctx context.Context, bucketName, region string) error
-	// BucketExists Checks if a bucket exists.
+	// BucketExists reports whether a bucket exists. A missing bucket returns
+	// (false, nil); err is non-nil only for an actual lookup failure.
 	BucketExists(ctx context.Context, bucketName string) (found bool, err error)
 	// UploadFile for upload single file
 	UploadFile(
@@ -77,7 +78,7 @@ type Storage interface {
 	CopyFile(ctx context.Context, srcBucket, srcPath, dstBucket, dstPath string) error
 	// Client get storage client
 	Client() interface{}
-	// SignedURL get signed URL
+	// SignedURL get signed URL. Passing a nil opts returns an error.
 	SignedURL(
 		ctx context.Context,
 		bucketName, filePath string,

@@ -1,6 +1,34 @@
 package disk
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
+
+func TestDisk_BucketExists(t *testing.T) {
+	d := NewEngine("", t.TempDir())
+
+	// A missing bucket must report (false, nil), not an error.
+	found, err := d.BucketExists(context.Background(), "missing")
+	if err != nil {
+		t.Fatalf("BucketExists(missing) returned error: %v", err)
+	}
+	if found {
+		t.Errorf("BucketExists(missing) = true, want false")
+	}
+
+	// After creation it must report (true, nil).
+	if err := d.CreateBucket(context.Background(), "present", ""); err != nil {
+		t.Fatalf("CreateBucket: %v", err)
+	}
+	found, err = d.BucketExists(context.Background(), "present")
+	if err != nil {
+		t.Fatalf("BucketExists(present) returned error: %v", err)
+	}
+	if !found {
+		t.Errorf("BucketExists(present) = false, want true")
+	}
+}
 
 func TestDisk_GetFileURL(t *testing.T) {
 	type fields struct {
