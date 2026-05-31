@@ -23,6 +23,16 @@ func getMinio() (*minio.MinioContainer, error) {
 	return minioContainer, err
 }
 
+func TestSignedURLNilOpts(t *testing.T) {
+	// The nil-opts guard returns before any network call, so this needs no
+	// running MinIO container.
+	client, err := NewEngine("localhost:9000", "minioadmin", "minioadmin", false, true, "us-east-1")
+	assert.NoError(t, err)
+
+	_, err = client.SignedURL(context.Background(), "testbucket", "testfile.txt", nil)
+	assert.Error(t, err)
+}
+
 func TestCreateBucket(t *testing.T) {
 	minioContainer, err := getMinio()
 	assert.NoError(t, err)

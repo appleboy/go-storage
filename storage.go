@@ -50,6 +50,9 @@ func NewEngine(cfg Config) (core.Storage, error) {
 		S3 = engine
 		return engine, nil
 	default:
+		// Clear any engine from a previous call so callers that ignore this
+		// error cannot keep using a stale global.
+		S3 = nil
 		return nil, fmt.Errorf("unknown storage driver: %q", cfg.Driver)
 	}
 }

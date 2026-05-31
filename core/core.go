@@ -78,7 +78,7 @@ type Storage interface {
 	CopyFile(ctx context.Context, srcBucket, srcPath, dstBucket, dstPath string) error
 	// Client get storage client
 	Client() interface{}
-	// SignedURL get signed URL. opts must be non-nil.
+	// SignedURL get signed URL. Passing a nil opts returns an error.
 	SignedURL(
 		ctx context.Context,
 		bucketName, filePath string,
