@@ -246,7 +246,8 @@ func TestUploadFileByReader(t *testing.T) {
 	reader := bytes.NewReader(content)
 	err = client.UploadFileByReader(
 		context.Background(), "testbucket", "testfile.txt",
-		reader, "text/plain", int64(len(content)))
+		reader, "text/plain", int64(len(content)),
+	)
 	assert.NoError(t, err)
 
 	// check if the file exists
