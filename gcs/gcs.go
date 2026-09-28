@@ -243,7 +243,7 @@ func (g *GCS) BucketExists(ctx context.Context, bucketName string) (found bool, 
 }
 
 // Client get disk client
-func (g *GCS) Client() interface{} {
+func (g *GCS) Client() any {
 	return g.client
 }
 

@@ -77,7 +77,7 @@ type Storage interface {
 	// Copy Create or replace an object through server-side copying of an existing object.
 	CopyFile(ctx context.Context, srcBucket, srcPath, dstBucket, dstPath string) error
 	// Client get storage client
-	Client() interface{}
+	Client() any
 	// SignedURL get signed URL. Passing a nil opts returns an error.
 	SignedURL(
 		ctx context.Context,

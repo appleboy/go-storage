@@ -315,7 +315,7 @@ func (m *Minio) FileExist(ctx context.Context, bucketName, fileName string) bool
 }
 
 // Client get disk client
-func (m *Minio) Client() interface{} {
+func (m *Minio) Client() any {
 	return m.client
 }
 
