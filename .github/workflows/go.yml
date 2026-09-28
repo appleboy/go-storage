@@ -58,6 +58,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Build MinIO test fixture
+        run: docker build --file .github/minio.Dockerfile --tag minio/minio:RELEASE.2024-01-16T16-07-38Z .
       - name: Run Tests
         run: |
           go test -v -covermode=atomic -coverprofile=coverage.out ./...
