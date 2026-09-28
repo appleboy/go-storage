@@ -106,11 +106,7 @@ func (d *Disk) UploadFileByReader(
 // CreateBucket create bucket
 func (d *Disk) CreateBucket(_ context.Context, bucketName, region string) error {
 	storage := path.Join(d.Path, bucketName)
-	if err := os.MkdirAll(storage, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
+	return os.MkdirAll(storage, os.ModePerm)
 }
 
 // FilePath for store path + file name
@@ -189,7 +185,7 @@ func (d *Disk) BucketExists(_ context.Context, bucketName string) (found bool, e
 }
 
 // Client get disk client
-func (d *Disk) Client() interface{} {
+func (d *Disk) Client() any {
 	return nil
 }
 

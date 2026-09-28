@@ -243,7 +243,7 @@ func (g *GCS) BucketExists(ctx context.Context, bucketName string) (found bool, 
 }
 
 // Client get disk client
-func (g *GCS) Client() interface{} {
+func (g *GCS) Client() any {
 	return g.client
 }
 
@@ -270,7 +270,8 @@ func (g *GCS) SignedURL(
 			PrivateKey:     g.privateKey,
 			Method:         "GET",
 			Expires:        time.Now().UTC().Add(opts.Expiry),
-		})
+		},
+	)
 }
 
 func (g *GCS) SetLifeCycle(_ context.Context, _ string, _ *core.LifecycleConfig) error {
